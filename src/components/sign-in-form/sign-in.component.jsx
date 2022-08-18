@@ -1,16 +1,18 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import Button from "../button/button.component";
 import FormInput from "../form-input/form-input.component";
 import './sign-in.scss';
+import { UserContext } from "../../context/user.context";
 
 const defaultFormFields = {
-  email: "",
+  username: "",
   password: "",
 };
 
 const SignInForm = () => {
   const [formFields, setFormFields] = useState(defaultFormFields);
-  const { email, password } = formFields;
+  const { username, password } = formFields;
+  const { login } = useContext(UserContext);
 
   const resetFields = () => {
     setFormFields(defaultFormFields);
@@ -24,38 +26,29 @@ const SignInForm = () => {
   const onFormSubmit = async (e) => {
     e.preventDefault();
 
-    // try {
-    //   const response = await signInAuthUser(email, password);
-    //   resetFields();
-    // } catch (err) {
-    //   switch (err.code) {
-    //     case 'auth/wrong-password': {
-    //       alert("Password is wrong");
-    //       break;
-    //     }
-    //     case 'auth/user-not-found': {
-    //       alert("User not found");
-    //       break;
-    //     }
-    //     default: break;
-    //   }
-    //   resetFields();
-    // }
-  };
+    try {
+      await login(username, password);
+      resetFields();
+    } catch (err) {
+      alert(err);
+    }
+    resetFields();
+  }
+
 
   return (
     <div className="sign-up-container">
       <h2>Already have an account</h2>
-      <span>Sign In with your email and password</span>
+      <span>Sign In with your username and password</span>
       <form onSubmit={onFormSubmit}>
 
         <FormInput
-          label="Email"
-          type="email"
-          name="email"
+          label="Username"
+          type="text"
+          name="username"
           required
           onChange={handleChange}
-          value={email}
+          value={username}
         />
 
         <FormInput

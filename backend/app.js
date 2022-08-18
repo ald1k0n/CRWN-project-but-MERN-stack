@@ -21,47 +21,32 @@ mongoose.connect('mongodb://127.0.0.1:27017/crownProject');
 const User = require('./Schemas/userSchema');
 const Categories = require('./Schemas/productSchema');
 
+
 passport.use(User.createStrategy());
 
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-app.get('/user', async (req, res) => {
-    if (req.isAuthenticated()) {
-        await User.findOne({ username: req.session.passport.user }, (err, user) => {
+let cookie;
+
+app.get('/user', (req, res) => {
+    res.json(cookie);
+});
+
+app.post('/register', (req, res) => {
+    User.register({ username: req.body.username, email: req.body.email }, req.body.password,
+        async (err, user) => {
             if (err) {
                 res.json(`Error: ${err}`);
             }
             else {
-                res.json(user);
+                passport.authenticate('local')(req, res, () => {
+                    res.json(req.user);
+                    cookie = req.user;
+                });
             }
-        });
-    }
-    else {
-        res.json(`You must be authorized`);
-    }
-});
-
-app.post('/register', async (req, res) => {
-    try {
-        await User.register({ username: req.body.username, email: req.body.email }, req.body.password,
-            async (err, user) => {
-                if (err) {
-                    res.json(`Error: ${err}`);
-                }
-                else {
-                    passport.authenticate('local')(req, res, () => {
-                        res.json(`Success, account has been created`);
-                    });
-                }
-            }
-        );
-
-    }
-    catch (e) {
-        res.status(400).json(`Error: ${e}`)
-    }
-
+        }
+    );
 });
 
 app.post('/login', (req, res) => {
@@ -70,30 +55,38 @@ app.post('/login', (req, res) => {
         password: req.body.password
     });
 
-    try {
-        req.login(user, (err) => {
-            if (err) res.json(`Error: ${err}`);
-            else {
-                passport.authenticate(`local`)(req, res, err => {
-                    if (!err) {
-                        res.status(200).json(`Success`)
-                    }
-                    else {
-                        res.json(`Error`)
-                    }
-                })
-            }
-        });
-    }
-    catch (err) {
-        res.json(`Error: ${err}`)
-    }
+    req.login(user, (err) => {
+        if (err) {
+            return res.status(401).json(`Error: ${err}`);
+        }
+        else {
+            passport.authenticate(`local`)(req, res, err => {
+                if (!err) {
+                    res.json(req.user);
+                    cookie = req.user;
+                }
+                else {
+                    return res.json(`Error: ${err}`)
+                }
+            })
+        }
+    });
 });
 
 app.get('/categories', (req, res) => {
     Categories.find()
         .then(items => res.json(items))
         .catch(err => res.status(400).json(`Error: Cannot reach categories`));
+});
+
+app.post('/logout', (req, res) => {
+    req.logout(err => {
+        if (err) res.json(err);
+        else {
+            cookie = '';
+            res.json(cookie);
+        }
+    })
 });
 
 app.listen(5000, () => {

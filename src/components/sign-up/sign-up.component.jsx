@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import Button from "../button/button.component";
 import FormInput from "../form-input/form-input.component";
 import './sign-up.scss';
+import { UserContext } from "../../context/user.context";
 
 const defaultFormFields = {
-  displayName: "",
+  username: "",
   email: "",
   password: "",
   confirmPassword: "",
@@ -12,7 +13,8 @@ const defaultFormFields = {
 
 const SignUpForm = () => {
   const [formFields, setFormFields] = useState(defaultFormFields);
-  const { displayName, email, password, confirmPassword } = formFields;
+  const { username, email, password, confirmPassword } = formFields;
+  const { createUser } = useContext(UserContext);
 
   const resetFields = () => {
     setFormFields(defaultFormFields);
@@ -32,21 +34,15 @@ const SignUpForm = () => {
       return;
     }
 
-    // try {
-    //   const response = await createAuthUserWithEmailAndPassword(
-    //     email,
-    //     password
-    //   );
-    //   await createUserDocumentFromAuth(response.user, { displayName });
-    //   resetFields();
-    // } catch (err) {
-    //   alert(
-    //     err.message === "Firebase: Error (auth/email-already-in-use)."
-    //       ? "Email already in use"
-    //       : err.message
-    //   );
-    //   resetFields();
-    // }
+    try {
+      await createUser(username, password, email);
+      resetFields();
+    } catch (err) {
+      alert(
+        alert(err)
+      );
+      resetFields();
+    }
   };
 
   return (
@@ -57,10 +53,10 @@ const SignUpForm = () => {
         <FormInput
           label="Display Name"
           type="text"
-          name="displayName"
+          name="username"
           required
           onChange={handleChange}
-          value={displayName}
+          value={username}
         />
 
         <FormInput

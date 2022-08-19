@@ -6,13 +6,17 @@ const session = require('express-session');
 const passport = require('passport');
 
 app.use(express.json());
-app.use(cors())
+app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
     secret: 'Crwn',
     resave: false,
     saveUninitialized: false
 }));
+
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -27,10 +31,8 @@ passport.use(User.createStrategy());
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-let cookie;
-
 app.get('/user', (req, res) => {
-    res.json(cookie);
+    res.json(req.user);
 });
 
 app.post('/register', (req, res) => {
@@ -42,7 +44,6 @@ app.post('/register', (req, res) => {
             else {
                 passport.authenticate('local')(req, res, () => {
                     res.json(req.user);
-                    cookie = req.user;
                 });
             }
         }
@@ -63,7 +64,6 @@ app.post('/login', (req, res) => {
             passport.authenticate(`local`)(req, res, err => {
                 if (!err) {
                     res.json(req.user);
-                    cookie = req.user;
                 }
                 else {
                     return res.json(`Error: ${err}`)
@@ -76,17 +76,16 @@ app.post('/login', (req, res) => {
 app.get('/categories', (req, res) => {
     Categories.find()
         .then(items => res.json(items))
-        .catch(err => res.status(400).json(`Error: Cannot reach categories`));
+        .catch(err => res.status(400).json(`Error: Cannot reach categories with ${err}`));
 });
 
 app.post('/logout', (req, res) => {
     req.logout(err => {
-        if (err) res.json(err);
+        if (err) console.log(err);
         else {
-            cookie = '';
-            res.json(cookie);
+            res.json(`User successfully logged out`);
         }
-    })
+    });
 });
 
 app.listen(5000, () => {
